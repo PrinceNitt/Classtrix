@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+            .container{
+                /* background-color: #fff; */
+                border-radius: 10px;
+                margin-right: 62px;
+                /* transform:translate(-50%,-50%); */
+                background: linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.3));
+                /* box-shadow: 0 2.8px 2.2px rgba(0,0,0,0.034),0 6.7px 5.3px rgba(0,0,0,0.048),0 12; */
+                box-shadow: 7px 7px 60px purple;
+                overflow:hidden;
+                width:calc(100vw - 65vw);
+                max-width: 100%;
+                margin-top:72px;
+                margin-bottom: 72px;
+            }
+            h2{
+                font-family: var(--my-btn-font);
+                font-size: 30px;
+                text-transform: uppercase;
+                text-align: center;
+                margin-bottom: 0px; 
+            }
+            .header{
+            /* background:var(--lg-color); */
+            padding:17px 0;  
+            }
+            .form{
+                padding:29px;
+            }
+            .form-control{
+                margin-bottom:15px;
+                position:relative;
+            }
+            .form-control input{
+                width: 100%;
+                border:2px solid #f0f0f0;
+                border-radius: 5px;
+                display:block;
+                font-family:var(--myfont);
+                font-size: 14px;
+                padding: 6px;
+            }
+            h1{
+                
+                font-family: var(--my-btn-font);
+                font-size: 50px;
+                text-transform: uppercase;
+                text-align: center;
+                margin-bottom: 0px;
+            }
+    </style>
+  </head>
+  <body>
+    <h1 class="coll">ClassConneX</h1>
+    <div class="container">
+        <div class="header">
+            <h2>REGISTRATION FROM</h2>
+        </div>
+        <form action="/register" method="POST" class="form" id="form">
+            <div class="form-control">
+                <label for="roll">Roll No</label>
+                <input type="number" id="roll" placeholder="enter your roll no" autocomplete="off" name="roll">
+                <small>Error Msg</small>
+            </div>
+             <div class="form-control">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="enter your email" autocomplete="off" name="email">
+                <small>Error Msg</small>
+            </div>
+             <div class="form-control">
+                <label for="phone">phone number</label>
+                <input type="number" id="phone" placeholder="enter your phone number" autocomplete="off" name="phone">
+                <small>Error Msg</small>
+            </div>
+            <div class="form-control">
+                <label for="dept">Department</label>
+                <select name="dept" id="dept">
+                    <option value="MCA">MCA</option>
+                    <option value="CSE">CSE</option>
+                </select>
+                <!-- <input type="text" id="username" placeholder="enter user name" autocomplete="off" name="username"> -->
+                <small>Error Msg</small>
+            </div>
+            <div class="form-control">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="enter user name" autocomplete="off" name="username">
+                <small>Error Msg</small>
+            </div>
+             <div class="form-control">
+                <label for="password">password</label>
+                <input type="password" id="password" placeholder="enter your password" autocomplete="off" name="password">
+                <small>Error Msg</small>
+            </div>
+             <div class="form-control">
+                <label for="cpassword">confirm password</label>
+                <input type="password" id="cpassword" placeholder="enter your confirm password" autocomplete="off" name="confirmpassword">
+                <small>Error Msg</small>
+            </div>
+            <input type="submit" value="submit" class="btn" name="">
+        </form>
+    </div>
+  </body>
+  </html>

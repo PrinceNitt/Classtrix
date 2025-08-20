@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassConneX</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <h1 class="coll">ClassConneX</h1>
+    <h2>Welcome to NITT</h2>
+    <div class="container">
+       
+        <div class="header">
+            <h3>LOGIN FROM</h3>
+        </div>
+        <form action="/index" method="POST" class="form" id="form">
+             <div class="form-control">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="enter your name" autocomplete="off" name="username">
+                <small>Error Msg</small>
+            </div>
+             <div class="form-control">
+                <label for="password">password</label>
+                <input type="password" id="password" placeholder="enter your password" autocomplete="off" name="password">
+                <small>Error Msg</small>
+             </div>
+            <input type="submit" value="login" class="btn" name="">
+            <a href="/register" class="btn" id="link">new account</a>
+        </form>
+    </div> 
+</body>
+</html>
