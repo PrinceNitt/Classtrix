@@ -1,4 +1,4 @@
-# ClassConnex
+# Classtrix
 
 ClassConnex is a web-based platform designed to streamline and enhance classroom and club management for educational institutions. It provides features for managing students, assignments, notes, notices, club events, timetables, and more.
 
