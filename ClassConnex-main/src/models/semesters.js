@@ -14,7 +14,7 @@ const semSchema= new mongoose.Schema({
    },
    stu:{
     type:[Number],
-    required:true
+    default:[]
    }
 });
 

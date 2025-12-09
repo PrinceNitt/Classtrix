@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login - ClassConneX</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Work Sans", sans-serif;
+      background: linear-gradient(135deg, #0b3c61 0%, #1e2a38 100%);
+      color: #e7f5ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      width: 90%;
+      max-width: 420px;
+      background: rgba(0,0,0,0.55);
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h1 { margin: 0; text-align: center; font-size: 24px; }
+    label { font-size: 14px; margin-bottom: 4px; display:block; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid #9face6;
+      background: #1e2a38;
+      color: #e7f5ff;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(to right,#74ebd5,#9face6);
+      color: #0b3c61;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hint { font-size: 13px; color: #cdd5e0; text-align: center; }
+    a { color: #9face6; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Admin Portal Login</h1>
+    <form action="/admin-login" method="POST">
+      <div>
+        <label for="email">Admin Email</label>
+        <input id="email" name="email" type="email" placeholder="Enter admin email" required />
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Enter password" required />
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <div class="hint">
+      Not an admin? <a href="/">Go back</a>
+    </div>
+  </div>
+</body>
+</html>
+

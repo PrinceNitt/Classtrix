@@ -6,6 +6,8 @@ const app=express();
 const hbs=require("hbs");
 const bcrypt = require("bcryptjs"); 
 const multer=require('multer');
+const session = require("express-session");
+const rateLimit = require("express-rate-limit");
 require('./db/db');
 
 
@@ -18,8 +20,17 @@ const Notice=require("./models/notices");
 const Sem=require("./models/semesters");
 const Clubevent=require("./models/clubevent");
 
+const ADMIN_EMAIL = "prince774623kumar@gmail.com";
+const getUser = (req) => req?.session?.user || null;
 
-let port = process.env.PORT || 8000;
+const loginLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+let port = process.env.PORT || 3000;
 
 
 
@@ -28,13 +39,25 @@ const template_path =path.join(__dirname,"../templates/views");
 // const l_path=path.join(__dirname,"../images");
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));
+app.use(session({
+    secret: process.env.SESSION_SECRET || "dev-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: "lax"
+    }
+}));
+
+app.use((req,res,next)=>{
+    res.locals.useremail = getUser(req);
+    next();
+});
 
 app.use(express.static(static_path));
 // app.set("views",l_path);
 app.set("view engine","hbs");
 app.set("views",template_path);
-
-var useremail;
 app.get("/", (req,res)=>{
     res.render("index");
     // res.send("hello");
@@ -77,14 +100,26 @@ app.post("/register",async(req,res)=>{
 });
 app.post("/index",async(req,res)=>{
    try{
-       const user1 = req.body.username;
-       const password = req.body.password;
-      
-     useremail =  await Register.findOne({username:user1});
-       const isMatch =  await bcrypt.compare(password,useremail.password);
+       const user1 = (req.body.username || "").trim();
+       const password = (req.body.password || "").trim();
+       if(!user1 || !password){
+        return res.status(400).send("Username and password required");
+       }
+     const userRecord =  await Register.findOne({username:user1});
+       if(!userRecord){
+        return res.status(400).send("Invalid userid");
+       }
+       const isMatch =  await bcrypt.compare(password,userRecord.password);
 
        if(isMatch){
-        res.status(201).render("home",{useremail});
+        req.session.user = {
+            _id: userRecord._id,
+            username: userRecord.username,
+            email: userRecord.email,
+            cr: userRecord.cr,
+            sem: userRecord.sem
+        };
+        res.status(201).render("home",{useremail:req.session.user});
        }
        else{
         res.send("invalid password login");
@@ -139,8 +174,8 @@ app.get("/notes" ,async(req,res)=>{
 /*fir se home page per vapas ane per admin portal show nhi ho rha tha to useremail ko top per declare kiya per hm use const nhi declar ke skte the 
 kyuki initialize kena padh rha tha to var declare kr diya*/
 app.get("/home",(req,res)=>{
-    console.log(useremail);
-    res.render("home",{useremail});
+    const user = getUser(req);
+    res.render("home",{useremail:user});
 });
 app.get("/semN",async(req,res)=>{
     var dept=req.query.dept;
@@ -150,13 +185,72 @@ app.get("/semN",async(req,res)=>{
     
     res.render("semN",{deptdetails});
 });
-app.get("/adminportal",(req,res)=>{
-    res.render("adminportal",{useremail});
+app.get("/adminportal", async (req, res) => {
+    // Only allow access when a user is logged in and marked as CR/admin.
+    const useremail = getUser(req);
+    if (!useremail || !useremail.cr || useremail.email !== ADMIN_EMAIL) {
+        return res.redirect("/admin-login");
+    }
+    try {
+        const [userCount, users, tasks] = await Promise.all([
+            Register.countDocuments({}),
+            Register.find({}).lean(),
+            Task.find({}).lean()
+        ]);
+        const tasksCount = tasks.length;
+        res.render("adminportal", { useremail, userCount, users, tasks, tasksCount });
+    } catch (err) {
+        console.error("Failed to load admin portal", err);
+        res.status(500).send("Unable to load admin portal");
+    }
+})
+app.get("/admin-login",(req,res)=>{
+    res.render("adminlogin");
+})
+app.post("/admin-login", loginLimiter, async (req,res)=>{
+    try{
+        const email = (req.body.email || "").trim();
+        const password = (req.body.password || "").trim();
+        if(!email || !password){
+            return res.status(400).send("Email and password required.");
+        }
+        const candidate = await Register.findOne({email});
+        if(!candidate || !candidate.cr || candidate.email !== ADMIN_EMAIL){
+            return res.status(401).send("Not authorized for admin portal.");
+        }
+        const isMatch = await bcrypt.compare(password,candidate.password);
+        if(!isMatch){
+            return res.status(401).send("Invalid admin credentials.");
+        }
+        req.session.user = {
+            _id: candidate._id,
+            username: candidate.username,
+            email: candidate.email,
+            cr: candidate.cr,
+            sem: candidate.sem
+        };
+        const [userCount, users, tasks] = await Promise.all([
+            Register.countDocuments({}),
+            Register.find({}).lean(),
+            Task.find({}).lean()
+        ]);
+        const tasksCount = tasks.length;
+        return res.status(200).render("adminportal",{useremail:req.session.user,userCount,users,tasks,tasksCount});
+    }catch(err){
+        console.error("Admin login failed",err);
+        return res.status(500).send("Unable to login admin");
+    }
+})
+
+app.get("/logout",(req,res)=>{
+    req.session.destroy(()=> {
+        return res.redirect("/");
+    });
 })
 app.get("/assingment",(req,res)=>{
     Task.find({})
     .then((x)=>{
-        res.render("assingment",{x,useremail});
+        res.render("assingment",{x,useremail:getUser(req)});
         console.log(x);
     })
     .catch((y)=>{
@@ -204,7 +298,7 @@ app.get('/upload',function(req,res,next)
 {
     Timetable.find({})
     .then((x)=>{
-        res.render("timetable",{x,useremail});
+        res.render("timetable",{x,useremail:getUser(req)});
         console.log(x);
     })
     .catch((y)=>{
@@ -228,7 +322,7 @@ app.post('/upload', upload,async(req,res,next)=>{
 app.get("/notice",(req,res)=>{
     Notice.find({})
     .then((x)=>{
-        res.render("notice",{x,useremail});
+        res.render("notice",{x,useremail:getUser(req)});
         console.log(x);
     })
     .catch((y)=>{
@@ -261,7 +355,7 @@ app.get("/delete-notice",async(req,res)=>{
     app.get("/club",(req,res)=>{
         Clubevent.find({})
         .then((x)=>{
-            res.render("club",{x,useremail});
+            res.render("club",{x,useremail:getUser(req)});
             console.log(x);
         })
         .catch((y)=>{
@@ -295,22 +389,44 @@ app.get("/delete-notice",async(req,res)=>{
 
 
     app.get("/addstu",async(req,res)=>{
-        const use=useremail;
-        const semdetails=await Sem.findOne({sem:use.sem});
-        res.render("addstu",{semdetails,useremail});
+        const use=getUser(req);
+        if(!use){
+            return res.redirect("/");
+        }
+        const semKey = use.sem || "admin";
+        let semdetails=await Sem.findOne({sem:semKey});
+        if(!semdetails){
+            semdetails = await Sem.create({sem:semKey, cr: use.cr ? 1 : 0, stu: []});
+        }
+        res.render("addstu",{semdetails,useremail:use});
     })
     app.post("/create-stu",async(req,res)=>{
            const roll=req.body.roll;
-           const use=useremail;
-          await Sem.findOneAndUpdate({sem:use.sem},{$addToSet:{stu:roll},});
-          await Register.findOneAndUpdate({roll:roll},{$set:{sem:use.sem}});
+           const use=getUser(req);
+           if(!use){
+            return res.redirect("/");
+           }
+          const semKey = use.sem || "admin";
+          const rollNum = Number(roll);
+          if(Number.isNaN(rollNum)){
+            return res.status(400).send("Invalid roll number");
+          }
+          await Sem.findOneAndUpdate(
+            {sem:semKey},
+            { $setOnInsert: { cr: use.cr ? 1 : 0 }, $addToSet:{stu:rollNum}},
+            {upsert:true}
+          );
+          await Register.findOneAndUpdate({roll:rollNum},{$set:{sem:semKey}});
         res.redirect("back");
         
     });
     app.get("/delete-stu",async(req,res)=>{
         const rollnums=req.query;
         console.log(rollnums);
-        const use=useremail;
+        const use=getUser(req);
+        if(!use){
+            return res.redirect("/");
+        }
         try {
             if (rollnums && Object.keys(rollnums).length > 0) {
               const rollsToDelete = Object.keys(rollnums); // Get the roll numbers to delete
@@ -329,12 +445,12 @@ app.get("/delete-notice",async(req,res)=>{
         });
 
     app.get("/stuhome",async(req,res)=>{
-        res.render("stuhome",{useremail});
+        res.render("stuhome",{useremail:getUser(req)});
     })
     app.get("/stuassing",async(req,res)=>{
         Task.find({})
         .then((x)=>{
-            res.render("stuassing", { x: x, useremail: useremail });
+            res.render("stuassing", { x: x, useremail: getUser(req) });
             console.log(x);
         })
         .catch((y)=>{
@@ -344,7 +460,7 @@ app.get("/delete-notice",async(req,res)=>{
     app.get("/stunotice",async(req,res)=>{
         Notice.find({})
         .then((x)=>{
-            res.render("stunotice", { x: x, useremail: useremail });
+            res.render("stunotice", { x: x, useremail: getUser(req) });
             console.log(x);
         })
         .catch((y)=>{
@@ -354,7 +470,7 @@ app.get("/delete-notice",async(req,res)=>{
     app.get("/stuclub",async(req,res)=>{
         Clubevent.find({})
         .then((x)=>{
-            res.render("stuclub", { x: x, useremail: useremail });
+            res.render("stuclub", { x: x, useremail: getUser(req) });
             console.log(x);
         })
         .catch((y)=>{
@@ -365,7 +481,7 @@ app.get("/delete-notice",async(req,res)=>{
     {
         Timetable.find({})
         .then((x)=>{
-            res.render("stutimetabl", { x: x, useremail: useremail });
+            res.render("stutimetabl", { x: x, useremail: getUser(req) });
             console.log(x);
         })
         .catch((y)=>{

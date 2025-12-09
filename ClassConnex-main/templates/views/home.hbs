@@ -18,23 +18,23 @@
       flex; justify-content: space-between; align-items: center;
       background-color: rgb(40, 38, 38); box-shadow: rgba(0, 0, 0, 0.05) 0px 8px
       8px -6px; } .header .logo { height: 3rem; color: #e7f5ff; font-size: 20px;
-      } .navbar-list { display: flex; gap: 4.8rem; list-style: none; }
+      } .navbar-list { display: flex; gap: 2.4rem; list-style: none; align-items: center; }
       .navbar-link:link, .navbar-link:visited { display: inline-block;
-      text-transform: uppercase; text-decoration: none; font-size: 2rem;
-      font-weight: 500; color: whitesmoke; transition: all 0.3s; }
-      .navbar-link:active { color: black; } .mobile-navbar-btn { display: none;
+      text-transform: uppercase; text-decoration: none; font-size: 1.8rem;
+      font-weight: 500; color: whitesmoke; padding: 0.4rem 0; border-bottom: 2px solid transparent; transition: all 0.25s ease; letter-spacing: 0.05em;}
+      .navbar-link:active { color: black; } .navbar-link:hover { color: #9face6; border-color: #9face6; transform: translateY(-1px); }
+      .mobile-navbar-btn { display: none;
       background: transparent; cursor: pointer; } .mobile-nav-icon { width:
       4rem; height: 4rem; color: whitesmoke; }
       .mobile-nav-icon[name="close-outline"] { display: none; } /*
       =========================================== Hero and Service Section Start
       ======================================= */ .section-hero,
-      .section-services { padding: 9.6rem 0; background-color: #0b3c61; height:
+      .section-services { padding: 9.6rem 0; background-color: #0b3c61; min-height:
       38vh; display: flex; justify-content: center; align-items: center; margin:
       37px; border-radius: 10px; margin-right: 62px; background:
       linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)); box-shadow: 7px
       7px 60px purple; } .section-services {} .section-hero p, .section-services
-      p { font-size: 4.2rem; color: #121111; margin-left: 302px; margin-top:
-      -20px; font-weight: 600; } .about { font-size: 43px; } .para { font-size:
+      p { font-size: 4.2rem; color: #121111; margin: 0; text-align: center; font-weight: 600; } .about { font-size: 43px; } .para { font-size:
       22px; } /* =========================================== Responsive Codes
       ======================================= */ /* 980px */ @media (max-width:
       62em) { .mobile-navbar-btn { display: block; z-index: 999; color:
@@ -53,12 +53,11 @@
       .mobile-navbar-btn .mobile-nav-icon[name="menu-outline"] { display: none;
       } } /*********************css for service
       section**************************/ .crew { display: flex; flex-wrap: wrap;
-      justify-content: space-between; } .people { margin-top: 27px; display:
-      flex; width: 323px; border-radius: 5px; background: linear-gradient(to
-      left, #74ebd5, #9face6); margin-right: 86px; margin-left: 78px;
-      justify-content: space-around; padding: 22px; align-items: center; height:
-      119px; } .avtar { width: 90px; height: 90px; border-radius: 50%; ; }
-      .proName { font-size: 2.5em; font-weight: 500; color: black; } .icons {
+      justify-content: center; gap: 24px; } .people { margin-top: 27px; display:
+      flex; width: 323px; border-radius: 8px; background: linear-gradient(to
+      left, #74ebd5, #9face6); justify-content: space-around; padding: 22px; align-items: center; height:
+      119px; box-shadow: 0 10px 35px rgba(0,0,0,0.2);} .avtar { width: 90px; height: 90px; border-radius: 50%; ; }
+      .proName { font-size: 2.5em; font-weight: 600; color: black; } .icons {
       display: flex; } li { display: list-item; } .linked { padding-right: 20px;
       text-decoration: none; list-style-type: none; } .github { border-radius:
       50%; } /* Below 560px */ @media (max-width: 35em) { .header { padding: 0
@@ -77,6 +76,13 @@
           <li><a class="navbar-link" href="/notes">Notes</a></li>
           <li><a class="navbar-link" href="#">E-book</a></li>
 
+          {{#if useremail}}
+            <li><a class="navbar-link" href="/stuassing">Assignments</a></li>
+            <li><a class="navbar-link" href="/stunotice">Notices</a></li>
+            <li><a class="navbar-link" href="/stuclub">Clubs</a></li>
+            <li><a class="navbar-link" href="/stutimetabl">Timetable</a></li>
+          {{/if}}
+
           {{#if useremail.sem}}
             <li><a
                 class="navbar-link"
@@ -86,6 +92,9 @@
 
           {{#if useremail.cr}}
             <li><a class="navbar-link" href="/adminportal">adminportal</a></li>
+          {{/if}}
+          {{#if useremail}}
+            <li><a class="navbar-link" href="/logout">logout</a></li>
           {{/if}}
         </ul>
       </nav>
@@ -118,21 +127,21 @@
     ========================================  -->
     <section class="section-services">
       <div class="hero">
-        <p>Meet Our Team</p>
-        <div class="crew">
-          <div class="people">
+        <p style="text-align:center; width:100%;">Creator's Profile</p>
+        <div class="crew" style="justify-content:center; width:100%; padding:0;">
+          <div class="people" style="margin: 15px auto;">
             <div><img src="./images/manav.avif" alt="" class="avtar" /></div>
             <div>
-              <div class="proName">Manvendra</div>
+              <div class="proName">Prince Kumar</div>
               <div class="icons">
                 <li class="linked">
                   <a
-                    href="https://www.linkedin.com/in/pallavi-priya-333763244/"
+                    href="https://www.linkedin.com/in/prince-kumar-130328254/"
                     target="_blank"
                   ><img src="./images/linked.png" /></a>
                 </li>
                 <li class="linked">
-                  <a href="https://github.com/smanav00" target="_blank"><img
+                  <a href="https://github.com/PrinceNitt" target="_blank"><img
                       class="github"
                       src="./images/github.png"
                     /></a>
@@ -140,27 +149,6 @@
               </div>
             </div>
           </div>
-          <div class="people">
-            <div><img src="./images/aachal.jpeg" alt="" class="avtar" /></div>
-            <div>
-              <div class="proName">Aachal</div>
-              <div class="icons">
-                <li class="linked">
-                  <a
-                    href="https://www.linkedin.com/in/aachal-dhote-a7b53b244/"
-                    target="_blank"
-                  ><img src="./images/linked.png" /></a>
-                </li>
-                <li class="linked">
-                  <a href="https://github.com/aachald" target="_blank"><img
-                      class="github"
-                      src="./images/github.png"
-                    /></a>
-                </li>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

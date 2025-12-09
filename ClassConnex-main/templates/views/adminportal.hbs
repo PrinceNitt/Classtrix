@@ -38,6 +38,18 @@ body {
 
 }
 
+body {
+  background: radial-gradient(circle at 20% 20%, rgba(116,235,213,0.15), transparent 30%),
+              radial-gradient(circle at 80% 0%, rgba(159,172,230,0.18), transparent 35%),
+              linear-gradient(135deg, #0b1f36 0%, #0b3c61 45%, #0a2345 100%);
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
 .header .logo {
   height: 3rem;
   color: #e7f5ff;
@@ -217,6 +229,119 @@ background: linear-gradient(90deg,
     width: 60%;
   }
 }
+
+/* Admin login block */
+.section-login {
+  padding: 4rem 0;
+  display: flex;
+  justify-content: center;
+}
+.login-card {
+  width: 90%;
+  max-width: 1000px;
+  background: linear-gradient(145deg, rgba(22,36,55,0.9), rgba(15,26,42,0.92));
+  color: #e7f5ff;
+  padding: 3rem;
+  border-radius: 10px;
+  box-shadow: 0 12px 45px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+.login-card h2 {
+  font-size: 2.4rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.login-card label {
+  font-size: 1.4rem;
+  margin-bottom: 0.4rem;
+  color: #e7f5ff;
+}
+.login-card input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #9face6;
+  background: #1e2a38;
+  color: #e7f5ff;
+}
+.login-card button {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(to right,#74ebd5,#9face6);
+  color: #0b3c61;
+  font-size: 1.6rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  background: rgba(116,235,213,0.15);
+  color: #9ee7d8;
+  font-weight: 600;
+  font-size: 1.4rem;
+  border: 1px solid rgba(158, 245, 235, 0.35);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+.card {
+  background: linear-gradient(160deg, rgba(116,235,213,0.12), rgba(159,172,230,0.12));
+  border: 1px solid rgba(158, 245, 235, 0.2);
+  border-radius: 12px;
+  padding: 1.6rem;
+  color: #e7f5ff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+.card h3 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+.card .big {
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 360px;
+  border: 1px solid rgba(158, 245, 235, 0.25);
+  border-radius: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e7f5ff;
+}
+thead tr {
+  background: rgba(116,235,213,0.12);
+}
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(158, 245, 235, 0.15);
+}
+tbody tr:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.section-block {
+  margin: 2rem 0;
+}
     </style>
   </head>
   <body>
@@ -234,6 +359,7 @@ background: linear-gradient(90deg,
            <li><a class="navbar-link" href="/club">club</a></li>     
           {{#if useremail.cr}}
               <li><a class="navbar-link" href="/adminportal">adminportal</a></li>
+              <li><a class="navbar-link" href="/logout">logout</a></li>
               {{/if}}
         </ul>
       </nav>
@@ -247,24 +373,82 @@ background: linear-gradient(90deg,
     <!-- ======================================== 
           Our Main Hero Section Start  
     ========================================  -->
-    <main>
+    <main class="page">
       <section class="section-hero">
         <div class="hero">
-          <h1 class="about">About CollegeSpace</h1>
-          <h1 class="para">CollegeSpace is a socio-academic portal for the students of NITT. 
-             With the help of this portal, students can find college-related information and material on a 
-             single website. With the help of this portal you can find all the necessary information and study 
-             materials like events update, notes, previous year’s exam papers, time-table in the same place.</h1>
+          <h1 class="about">Admin Dashboard</h1>
+          <h1 class="para">Welcome, {{useremail.username}}. Review users and assignments below.</h1>
+          <div class="pill">Authorized Admin</div>
         </div>
       </section>
-    </main>
 
     <!-- ======================================== 
           Our Service Section Start  
     ========================================  -->
-    <section class="section-services">
-      <div class="hero">
-        <p>Services section</p>
+    <section class="section-block">
+      <div class="cards">
+        <div class="card">
+          <h3>Total Users</h3>
+          <div class="big">{{userCount}}</div>
+        </div>
+        <div class="card">
+          <h3>Total Assignments</h3>
+          <div class="big">{{tasksCount}}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-login">
+      <div class="login-card">
+        <h2 style="text-align:left;">User List</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Dept</th>
+                <th>CR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each users}}
+              <tr>
+                <td>{{username}}</td>
+                <td>{{email}}</td>
+                <td>{{dept}}</td>
+                <td>{{cr}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-login">
+      <div class="login-card">
+        <h2 style="text-align:left;">Assignments</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Subject</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each tasks}}
+              <tr>
+                <td>{{description}}</td>
+                <td>{{subject}}</td>
+                <td>{{date}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
