@@ -51,7 +51,12 @@ ClassConnex-main/
    ```bash
    npm install
    ```
-3. Set up your MongoDB connection in `src/db/db.js`.
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and replace the placeholder values with your actual MongoDB credentials
 4. Start the application:
    ```bash
    node src/app.js
