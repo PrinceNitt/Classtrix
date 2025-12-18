@@ -1,0 +1,27 @@
+{{!-- Shared dropdown navigation script --}}
+<script>
+  const headerEl = document.querySelector(".header");
+  const toggleBtn = document.querySelector(".menu-toggle");
+
+  const setOpen = (open) => {
+    headerEl.classList.toggle("open", open);
+    toggleBtn.setAttribute("aria-expanded", open);
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    const isOpen = !headerEl.classList.contains("open");
+    setOpen(isOpen);
+  });
+
+  document.addEventListener("click", (evt) => {
+    if (!headerEl.contains(evt.target)) {
+      setOpen(false);
+    }
+  });
+
+  document.addEventListener("keydown", (evt) => {
+    if (evt.key === "Escape") {
+      setOpen(false);
+    }
+  });
+</script>

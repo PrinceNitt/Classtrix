@@ -1,0 +1,141 @@
+{{!-- Shared header and navigation styles --}}
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Work+Sans:wght@400;500;600;700&display=swap");
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Work Sans", sans-serif;
+}
+
+html {
+  font-size: 62.5%;
+  overflow-x: hidden;
+}
+
+body {
+  background: url('css/bg1.png') no-repeat center center fixed;
+  background-size: cover;
+  overflow-x: hidden;
+}
+
+/* Optimized header with dropdown navigation */
+.header {
+  padding: 1.6rem 3.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  background-color: rgb(40, 38, 38);
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 8px 8px -6px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.header .logo {
+  color: #e7f5ff;
+  font-size: 2.2rem;
+  letter-spacing: 0.08em;
+}
+
+.menu-toggle {
+  align-self: flex-end;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #e7f5ff;
+  padding: 0.8rem 1.2rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.menu-toggle:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.45);
+}
+
+.navbar {
+  width: 100%;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: all 0.28s ease;
+}
+
+.header.open .navbar {
+  max-height: 420px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.navbar-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: linear-gradient(to left, #74ebd5, #9face6);
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.navbar-list li {
+  width: 100%;
+}
+
+.navbar-link:link,
+.navbar-link:visited {
+  display: block;
+  width: 100%;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #121111;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid rgba(18,17,17,0.08);
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+.navbar-list li:last-child .navbar-link {
+  border-bottom: none;
+}
+
+.navbar-link:hover {
+  background: rgba(0,0,0,0.06);
+  color: #0b3c61;
+  transform: translateX(2px);
+}
+
+/* Responsive tweaks */
+@media (max-width: 62em) {
+  .header {
+    padding: 1.6rem 2rem;
+  }
+  .menu-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 35em) {
+  .header {
+    padding: 1.2rem 1.6rem;
+  }
+  .navbar-link:link,
+  .navbar-link:visited {
+    font-size: 1.5rem;
+  }
+}
+</style>

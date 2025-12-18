@@ -8,6 +8,9 @@ const bcrypt = require("bcryptjs");
 const multer=require('multer');
 const session = require("express-session");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const nodemailer = require("nodemailer");
+require('dotenv').config();
 require('./db/db');
 
 
@@ -30,22 +33,85 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-let port = process.env.PORT || 3000;
+const resetLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
+const forgotLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
+const requireAuth = (req, res, next) => {
+    if (!getUser(req)) return res.redirect("/");
+    next();
+};
+
+const adminOnly = (req, res, next) => {
+    const user = getUser(req);
+    if (!user || !user.cr || user.email !== ADMIN_EMAIL) {
+        return res.redirect("/admin-login");
+    }
+    next();
+};
+
+// Email (SMTP) configuration for password reset
+const SMTP_HOST = process.
+env.SMTP_HOST || "smtp.gmail.com";
+const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const MAIL_FROM = process.env.MAIL_FROM || SMTP_USER;
+
+const transporter = (SMTP_USER && SMTP_PASS)
+  ? nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        secure: SMTP_PORT === 465,
+        auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASS
+        }
+    })
+  : null;
+
+const sendResetEmail = async (to, code) => {
+    if (!transporter) return false;
+    await transporter.sendMail({
+        from: MAIL_FROM,
+        to,
+        subject: "ClassConneX Password Reset Code",
+        text: `Your ClassConneX password reset code is ${code}. It will expire in 1 hour.`,
+        html: `<p>Your ClassConneX password reset code is <strong>${code}</strong>.</p><p>This code will expire in 1 hour.</p>`
+    });
+    return true;
+};
+
+const port = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === "production";
 
 const static_path=path.join(__dirname,"../public");
 const template_path =path.join(__dirname,"../templates/views");
-// const l_path=path.join(__dirname,"../images");
+
+app.set("trust proxy", 1);
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));
 app.use(session({
+    name: "classconnex.sid",
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        sameSite: "lax"
+        sameSite: "lax",
+        secure: isProd,
+        maxAge: 1000 * 60 * 60 * 4 // 4 hours
     }
 }));
 
@@ -185,12 +251,7 @@ app.get("/semN",async(req,res)=>{
     
     res.render("semN",{deptdetails});
 });
-app.get("/adminportal", async (req, res) => {
-    // Only allow access when a user is logged in and marked as CR/admin.
-    const useremail = getUser(req);
-    if (!useremail || !useremail.cr || useremail.email !== ADMIN_EMAIL) {
-        return res.redirect("/admin-login");
-    }
+app.get("/adminportal", adminOnly, async (req, res) => {
     try {
         const [userCount, users, tasks] = await Promise.all([
             Register.countDocuments({}),
@@ -198,7 +259,7 @@ app.get("/adminportal", async (req, res) => {
             Task.find({}).lean()
         ]);
         const tasksCount = tasks.length;
-        res.render("adminportal", { useremail, userCount, users, tasks, tasksCount });
+        res.render("adminportal", { useremail: getUser(req), userCount, users, tasks, tasksCount });
     } catch (err) {
         console.error("Failed to load admin portal", err);
         res.status(500).send("Unable to load admin portal");
@@ -294,7 +355,7 @@ const Storage=multer.diskStorage({
 var upload=multer({
     storage:Storage
 }).single('file');
-app.get('/upload',function(req,res,next)
+app.get('/upload', adminOnly, function(req,res,next)
 {
     Timetable.find({})
     .then((x)=>{
@@ -304,11 +365,10 @@ app.get('/upload',function(req,res,next)
     .catch((y)=>{
         console.log(y);
     })
-    //res.render('timetable',{title:'upload time table',success:''});
 });
 
 
-app.post('/upload', upload,async(req,res,next)=>{
+app.post('/upload', adminOnly, upload, async(req,res,next)=>{
     var imageFile=req.file.filename;
     var success =req.file.filename+"uploaded successfully";
     var imagedetails=new Timetable({
@@ -319,7 +379,7 @@ app.post('/upload', upload,async(req,res,next)=>{
 })
 
 
-app.get("/notice",(req,res)=>{
+app.get("/notice", adminOnly, (req,res)=>{
     Notice.find({})
     .then((x)=>{
         res.render("notice",{x,useremail:getUser(req)});
@@ -331,7 +391,7 @@ app.get("/notice",(req,res)=>{
 
 });
 
-app.post("/create-notice",async(req,res)=>{
+app.post("/create-notice", adminOnly, async(req,res)=>{
     const notice=new Notice({
         description:req.body.description,
          subject:req.body.subject,
@@ -343,7 +403,7 @@ app.post("/create-notice",async(req,res)=>{
     
 });
 
-app.get("/delete-notice",async(req,res)=>{
+app.get("/delete-notice", adminOnly, async(req,res)=>{
     var id=req.query;
     var count=Object.keys(id).length;
     for(let i=0;i<count;i++){
@@ -352,7 +412,7 @@ app.get("/delete-notice",async(req,res)=>{
     return res.redirect('back');
     })
 
-    app.get("/club",(req,res)=>{
+    app.get("/club", adminOnly, (req,res)=>{
         Clubevent.find({})
         .then((x)=>{
             res.render("club",{x,useremail:getUser(req)});
@@ -364,7 +424,7 @@ app.get("/delete-notice",async(req,res)=>{
     
     });
     
-    app.post("/create-clubevent",async(req,res)=>{
+    app.post("/create-clubevent", adminOnly, async(req,res)=>{
         const clubevent=new Clubevent({
             description:req.body.description,
             club:req.body.club,
@@ -376,7 +436,7 @@ app.get("/delete-notice",async(req,res)=>{
         
     });
     
-    app.get("/delete-clubevent",async(req,res)=>{
+    app.get("/delete-clubevent", adminOnly, async(req,res)=>{
         var id=req.query;
         var count=Object.keys(id).length;
         for(let i=0;i<count;i++){
@@ -388,7 +448,7 @@ app.get("/delete-notice",async(req,res)=>{
     
 
 
-    app.get("/addstu",async(req,res)=>{
+    app.get("/addstu", requireAuth, async(req,res)=>{
         const use=getUser(req);
         if(!use){
             return res.redirect("/");
@@ -400,7 +460,7 @@ app.get("/delete-notice",async(req,res)=>{
         }
         res.render("addstu",{semdetails,useremail:use});
     })
-    app.post("/create-stu",async(req,res)=>{
+    app.post("/create-stu", requireAuth, async(req,res)=>{
            const roll=req.body.roll;
            const use=getUser(req);
            if(!use){
@@ -420,7 +480,7 @@ app.get("/delete-notice",async(req,res)=>{
         res.redirect("back");
         
     });
-    app.get("/delete-stu",async(req,res)=>{
+    app.get("/delete-stu", requireAuth, async(req,res)=>{
         const rollnums=req.query;
         console.log(rollnums);
         const use=getUser(req);
@@ -444,10 +504,10 @@ app.get("/delete-notice",async(req,res)=>{
           }
         });
 
-    app.get("/stuhome",async(req,res)=>{
+    app.get("/stuhome", requireAuth, async(req,res)=>{
         res.render("stuhome",{useremail:getUser(req)});
     })
-    app.get("/stuassing",async(req,res)=>{
+    app.get("/stuassing", requireAuth, async(req,res)=>{
         Task.find({})
         .then((x)=>{
             res.render("stuassing", { x: x, useremail: getUser(req) });
@@ -457,7 +517,7 @@ app.get("/delete-notice",async(req,res)=>{
             console.log(y);
         })
     })
-    app.get("/stunotice",async(req,res)=>{
+    app.get("/stunotice", requireAuth, async(req,res)=>{
         Notice.find({})
         .then((x)=>{
             res.render("stunotice", { x: x, useremail: getUser(req) });
@@ -467,7 +527,7 @@ app.get("/delete-notice",async(req,res)=>{
             console.log(y);
         })
     })
-    app.get("/stuclub",async(req,res)=>{
+    app.get("/stuclub", requireAuth, async(req,res)=>{
         Clubevent.find({})
         .then((x)=>{
             res.render("stuclub", { x: x, useremail: getUser(req) });
@@ -477,7 +537,7 @@ app.get("/delete-notice",async(req,res)=>{
             console.log(y);
         })
     })
-    app.get('/stutimetabl',function(req,res,next)
+    app.get('/stutimetabl', requireAuth, function(req,res,next)
     {
         Timetable.find({})
         .then((x)=>{
@@ -487,8 +547,131 @@ app.get("/delete-notice",async(req,res)=>{
         .catch((y)=>{
             console.log(y);
         })
-        //res.render('timetable',{title:'upload time table',success:''});
     });
+
+// Forgot Password Routes
+app.get("/forgot-password", forgotLimiter, (req, res) => {
+    res.render("forgotpassword", { message: null });
+});
+
+app.post("/forgot-password", forgotLimiter, async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.render("forgotpassword", { message: "Please enter your email", type: "error" });
+        }
+
+        const user = await Register.findOne({ email: email.toLowerCase().trim() });
+        
+        if (!user) {
+            return res.render("forgotpassword", { 
+                message: "If this email exists, you will receive reset instructions.", 
+                type: "success"
+            });
+        }
+
+        // Generate reset token (simple 6-digit code)
+        const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Set token and expiry (1 hour from now)
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        
+        await user.save();
+
+        let emailSent = false;
+        try {
+            emailSent = await sendResetEmail(user.email, resetToken);
+        } catch (err) {
+            console.error("Error sending reset email", err);
+        }
+
+        const message = emailSent
+            ? "We have emailed you a reset code. Please check your inbox and spam folder."
+            : "Email sending is not configured. Contact admin to reset your password.";
+
+        res.render("forgotpassword", { 
+            message,
+            type: emailSent ? "success" : "error",
+            showResetLink: emailSent,
+            email: email
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.render("forgotpassword", { message: "An error occurred. Please try again.", type: "error" });
+    }
+});
+
+app.get("/reset-password", resetLimiter, (req, res) => {
+    res.render("resetpassword", { message: null, email: req.query.email || "" });
+});
+
+app.post("/reset-password", resetLimiter, async (req, res) => {
+    try {
+        const { email, resetCode, newPassword, confirmPassword } = req.body;
+
+        if (!email || !resetCode || !newPassword || !confirmPassword) {
+            return res.render("resetpassword", { 
+                message: "All fields are required", 
+                type: "error",
+                email: email || ""
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.render("resetpassword", { 
+                message: "Passwords do not match", 
+                type: "error",
+                email: email || ""
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.render("resetpassword", { 
+                message: "Password must be at least 6 characters", 
+                type: "error",
+                email: email || ""
+            });
+        }
+
+        const user = await Register.findOne({
+            email: email.toLowerCase().trim(),
+            resetPasswordToken: resetCode,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.render("resetpassword", { 
+                message: "Invalid or expired reset code", 
+                type: "error",
+                email: email || ""
+            });
+        }
+
+        // Hash the new password
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        
+        await user.save();
+
+        res.render("resetpassword", { 
+            message: "Password reset successful! You can now login with your new password.", 
+            type: "success",
+            redirectToLogin: true
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.render("resetpassword", { 
+            message: "An error occurred. Please try again.", 
+            type: "error",
+            email: req.body.email || ""
+        });
+    }
+});
 
 //by default this is index page
 app.listen(port,()=>{

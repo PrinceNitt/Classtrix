@@ -28,10 +28,22 @@
   
   
   body {
-     
-   background: url('css/bg1.jpg') no-repeat center center fixed;
-  overflow-x: hidden;
-}
+    position: relative;
+    background: url('css/bg1.png') no-repeat center center fixed;
+    background-size: cover;
+    overflow-x: hidden;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.75);
+    z-index: -1;
+  }
 
   
   /* h1 style */
@@ -60,13 +72,14 @@
   
   /* styling all container */
   .container {
-    background-color: #eee;
-    border-radius: 5%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 2rem;
     width: 77%;
-    margin: 0 auto;
-  box-shadow: 1px 1px 6px -2px #888888;
-      margin-top: 46px;
-}
+    margin: 4.6rem auto;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    padding: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
   
   .container h1 {
     text-align: center;
@@ -310,19 +323,29 @@
                             <th>due date</th>
                             </tr>
                           </thead>
-                        {{#each x }}
-                            
-
-<tr>
-
+                        {{#if x.length}}
+                          {{#each x }}
+                          <tr>
                                <td> <p class="task">*</p></td>
                                <td> <p class="task">{{description }}</p></td>
-                                <td><p class="task"> {{ subject }}</p></td>
-                                <td><p class="task">{{ date}}</p></td>
-</tr>
-                    
-
-                        {{/each}}
+                               <td><p class="task">{{subject}}</p></td>
+                               <td><p class="task">{{date}}</p></td>
+                          </tr>
+                          {{/each}}
+                        {{else}}
+                          <tr>
+                               <td> <p class="task">*</p></td>
+                               <td> <p class="task">Data Structures Assignment 1</p></td>
+                               <td><p class="task">CSE201</p></td>
+                               <td><p class="task">2025-01-10</p></td>
+                          </tr>
+                          <tr>
+                               <td> <p class="task">*</p></td>
+                               <td> <p class="task">Digital Systems Problem Set</p></td>
+                               <td><p class="task">ECE204</p></td>
+                               <td><p class="task">2025-01-12</p></td>
+                          </tr>
+                        {{/if}}
 
                             
                 

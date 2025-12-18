@@ -1,15 +1,23 @@
 const mongoose=require('mongoose');
 mongoose.set('strictQuery', false);
+
+// Load env vars from project root .env (when started from project root)
 require("dotenv").config({ path: "./.env" });
-//inplace of localhost put 0.0.0.0
-mongoose.connect(process.env.DATABASE,{
-    useNewUrlParser:true,
-    useUnifiedTopology:true
-    //useCreateIndex:true
-})
-.then(()=>{
-    console.log('connect');
-})
-.catch((error)=>{
-    console.log(error);
-})
+
+// Prefer Atlas via DATABASE, otherwise allow local development via DATABASE_LOCAL or localhost
+const dbUri =
+    process.env.DATABASE_LOCAL ||
+    process.env.DATABASE ||
+    "mongodb://127.0.0.1:27017/classconnex";
+
+mongoose
+    .connect(dbUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+    .then(() => {
+        console.log(`MongoDB connected: ${dbUri.includes("mongodb+srv") ? "Atlas" : dbUri}`);
+    })
+    .catch((error) => {
+        console.error("MongoDB connection error:", error.message);
+    });
