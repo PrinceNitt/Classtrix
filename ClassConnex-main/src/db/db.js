@@ -1,23 +1,22 @@
-const mongoose=require('mongoose');
-mongoose.set('strictQuery', false);
+const mongoose = require("mongoose");
 
-// Load env vars from project root .env (when started from project root)
-require("dotenv").config({ path: "./.env" });
+mongoose.set("strictQuery", false);
 
-// Prefer Atlas via DATABASE, otherwise allow local development via DATABASE_LOCAL or localhost
+// Load environment variables from the application directory.
+require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
+
 const dbUri =
     process.env.DATABASE_LOCAL ||
     process.env.DATABASE ||
     "mongodb://127.0.0.1:27017/classconnex";
 
 mongoose
-    .connect(dbUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
+    .connect(dbUri)
     .then(() => {
-        console.log(`MongoDB connected: ${dbUri.includes("mongodb+srv") ? "Atlas" : dbUri}`);
+        const connectionType = dbUri.startsWith("mongodb+srv://") ? "Atlas" : "MongoDB";
+        console.log(`${connectionType} connection established`);
     })
     .catch((error) => {
-        console.error("MongoDB connection error:", error.message);
+        // Never log the connection string: it may contain database credentials.
+        console.error("MongoDB connection failed:", error.message);
     });
