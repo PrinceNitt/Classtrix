@@ -288,7 +288,7 @@ app.get("/notes" ,async(req,res)=>{
 //});
 /*fir se home page per vapas ane per admin portal show nhi ho rha tha to useremail ko top per declare kiya per hm use const nhi declar ke skte the 
 kyuki initialize kena padh rha tha to var declare kr diya*/
-app.get("/home",(req,res)=>{
+app.get("/home", requireAuth, (req,res)=>{
     const user = getUser(req);
     res.render("home",{useremail:user});
 });
@@ -360,7 +360,7 @@ app.post("/admin-login", loginLimiter, async (req,res)=>{
     }
 })
 
-app.get("/logout",(req,res)=>{
+app.post("/logout", requireAuth, (req,res)=>{
     req.session.destroy((error) => {
         if (error) {
             console.error("Unable to destroy session", error);
@@ -374,7 +374,7 @@ app.get("/logout",(req,res)=>{
         return res.redirect("/");
     });
 })
-app.get("/assingment",(req,res)=>{
+app.get("/assingment", requireAuth, (req,res)=>{
     Task.find({})
     .then((x)=>{
         res.render("assingment",{x,useremail:getUser(req)});
