@@ -577,7 +577,7 @@ app.post("/delete-notice", adminOnly, async(req,res)=>{
             const semKey = use.sem || "admin";
             const selectedRolls = Object.keys(req.body || {});
             const rollsToDelete = selectedRolls
-                .filter((key) => key !== "_csrf" && /^\\d+$/.test(key))
+                .filter((key) => key !== "_csrf" && /^\d+$/.test(key))
                 .map(Number)
                 .filter((roll) => Number.isSafeInteger(roll) && roll > 0);
 
