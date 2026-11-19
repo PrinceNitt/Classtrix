@@ -282,6 +282,7 @@
 
             <!-- form to create task -->
         <form action="/create-clubevent" method="POST">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
 
             <table class="table">
                 <thead>
@@ -315,7 +316,8 @@
         <div>          
                 <h1 align="center">NOTICE-LIST</h1>
 
-                <form action="/delete-clubevent" method="GET">
+                <form action="/delete-clubevent" method="POST">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
                     <table class="table">
                         <thead>
                             <tr>
