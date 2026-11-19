@@ -16,6 +16,7 @@
             <h3>LOGIN FROM</h3>
         </div>
         <form action="/index" method="POST" class="form" id="form">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
              <div class="form-control">
                 <label for="username">Username</label>
                 <input type="text" id="username" placeholder="enter your name" autocomplete="off" name="username">

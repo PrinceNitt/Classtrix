@@ -282,6 +282,7 @@
 
             <!-- form to create task -->
         <form action="/create-stu" method="POST">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
 
             <table class="table">
                 <thead>
@@ -308,7 +309,8 @@
         <div>          
                 <h1 align="center">student LIST</h1>
 
-                <form action="/delete-stu" method="GET">
+                <form action="/delete-stu" method="POST">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
                     <table class="table">
                         <thead>
                             <tr>
