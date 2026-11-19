@@ -87,8 +87,8 @@ const sendResetEmail = async (to, code) => {
         from: MAIL_FROM,
         to,
         subject: "ClassConneX Password Reset Code",
-        text: `Your ClassConneX password reset code is ${code}. It will expire in 1 hour.`,
-        html: `<p>Your ClassConneX password reset code is <strong>${code}</strong>.</p><p>This code will expire in 1 hour.</p>`
+        text: `Your ClassConneX password reset token is ${code}. It will expire in 15 minutes.`,
+        html: `<p>Your ClassConneX password reset token is <strong>${code}</strong>.</p><p>This token will expire in 15 minutes. If you did not request a reset, ignore this email.</p>`
     });
     return true;
 };
@@ -621,52 +621,49 @@ app.get("/forgot-password", forgotLimiter, (req, res) => {
 });
 
 app.post("/forgot-password", forgotLimiter, async (req, res) => {
-    try {
-        const { email } = req.body;
-        
-        if (!email) {
-            return res.render("forgotpassword", { message: "Please enter your email", type: "error" });
-        }
+    const genericResponse = {
+        message: "If an account exists for that email, password reset instructions will be sent."
+    };
 
-        const user = await Register.findOne({ email: email.toLowerCase().trim() });
-        
-        if (!user) {
-            return res.render("forgotpassword", { 
-                message: "If this email exists, you will receive reset instructions.", 
-                type: "success"
+    try {
+        const email = (req.body.email || "").trim().toLowerCase();
+        if (!email) {
+            return res.status(400).render("forgotpassword", {
+                message: "Please enter your email",
+                type: "error"
             });
         }
 
-        // Generate reset token (simple 6-digit code)
-        const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Set token and expiry (1 hour from now)
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-        
-        await user.save();
+        const user = await Register.findOne({ email });
+        if (user) {
+            // Store only a SHA-256 digest; the high-entropy token is sent by email.
+            const resetToken = crypto.randomBytes(32).toString("hex");
+            user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+            user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+            await user.save();
 
-        let emailSent = false;
-        try {
-            emailSent = await sendResetEmail(user.email, resetToken);
-        } catch (err) {
-            console.error("Error sending reset email", err);
+            try {
+                const emailSent = await sendResetEmail(user.email, resetToken);
+                if (!emailSent) {
+                    user.resetPasswordToken = undefined;
+                    user.resetPasswordExpires = undefined;
+                    await user.save();
+                }
+            } catch (err) {
+                console.error("Error sending reset email", err);
+                user.resetPasswordToken = undefined;
+                user.resetPasswordExpires = undefined;
+                await user.save();
+            }
         }
 
-        const message = emailSent
-            ? "We have emailed you a reset code. Please check your inbox and spam folder."
-            : "Email sending is not configured. Contact admin to reset your password.";
-
-        res.render("forgotpassword", { 
-            message,
-            type: emailSent ? "success" : "error",
-            showResetLink: emailSent,
-            email: email
-        });
-
+        return res.render("forgotpassword", genericResponse);
     } catch (error) {
-        console.error(error);
-        res.render("forgotpassword", { message: "An error occurred. Please try again.", type: "error" });
+        console.error("Password reset request failed", error);
+        return res.status(500).render("forgotpassword", {
+            message: "Unable to process your request. Please try again later.",
+            type: "error"
+        });
     }
 });
 
@@ -702,15 +699,24 @@ app.post("/reset-password", resetLimiter, async (req, res) => {
             });
         }
 
+        if (!/^[a-f0-9]{64}$/i.test(resetCode)) {
+            return res.status(400).render("resetpassword", {
+                message: "Invalid or expired reset token",
+                type: "error",
+                email: email || ""
+            });
+        }
+
+        const tokenHash = crypto.createHash("sha256").update(resetCode).digest("hex");
         const user = await Register.findOne({
             email: email.toLowerCase().trim(),
-            resetPasswordToken: resetCode,
-            resetPasswordExpires: { $gt: Date.now() }
+            resetPasswordToken: tokenHash,
+            resetPasswordExpires: { $gt: new Date() }
         });
 
         if (!user) {
             return res.render("resetpassword", { 
-                message: "Invalid or expired reset code", 
+                message: "Invalid or expired reset token", 
                 type: "error",
                 email: email || ""
             });
