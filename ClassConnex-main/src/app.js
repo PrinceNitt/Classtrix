@@ -319,7 +319,7 @@ app.get("/assingment",(req,res)=>{
     })
 
 });
-app.post("/create-task",async(req,res)=>{
+app.post("/create-task", adminOnly, async(req,res)=>{
     const task=new Task({
         description:req.body.description,
          subject:req.body.subject,
@@ -330,7 +330,7 @@ app.post("/create-task",async(req,res)=>{
     res.redirect("back");
     
 });
-app.get("/delete-task",async(req,res)=>{
+app.post("/delete-task", adminOnly, async(req,res)=>{
     console.log("HOII");
     var id=req.query;
     console.log(id);

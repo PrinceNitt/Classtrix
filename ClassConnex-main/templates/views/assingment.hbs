@@ -280,6 +280,7 @@
         <h1 align="center">Assingment</h1>
 
             <!-- form to create task -->
+        {{#if useremail.cr}}
         <form action="/create-task" method="POST">
 
             <table class="table">
@@ -317,11 +318,13 @@
             </table>
                   
   </form>
+        {{/if}}
     </section>
         <div>          
                 <h1 align="center">TASKS LIST</h1>
 
-                <form action="/delete-task" method="GET">
+                {{#if useremail.cr}}
+                <form action="/delete-task" method="POST">
                     <table class="table">
                         <thead>
                             <tr>
@@ -351,6 +354,7 @@
 </table>
 <div  align = "center"><input type="submit" class="btn btn-danger" value="DELETE TASK">
                 </div></form>
+                {{/if}}
 
         
             </div>
