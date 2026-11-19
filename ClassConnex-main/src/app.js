@@ -191,7 +191,6 @@ app.post("/register",async(req,res)=>{
             dept:req.body.dept,
             username:req.body.username,
             password:req.body.password,
-            confirmpassword:req.body.confirmpassword,
             cr:0
         })
           
