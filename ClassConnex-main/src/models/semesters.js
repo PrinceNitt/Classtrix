@@ -9,8 +9,7 @@ const semSchema= new mongoose.Schema({
     },
    cr:{
     type:Number,
-    required:true,
-    unique:true
+    required:true
    },
    stu:{
     type:[Number],
