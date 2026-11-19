@@ -3,14 +3,16 @@ const bcrypt = require("bcryptjs");
 const userSchema= new mongoose.Schema({
     roll:{
         type:Number,
-        reqiured:true,
+        required:true,
         unique:true
 
     },
     email:{
         type:String,
         required:true,
-        unique:true 
+        unique:true,
+        lowercase:true,
+        trim:true
     },
     phone:{
         type:Number,
@@ -35,7 +37,8 @@ const userSchema= new mongoose.Schema({
      required:true
     },
     cr:{
-       type: Boolean
+       type: Boolean,
+       default: false
     },
     sem:{
        type:String
