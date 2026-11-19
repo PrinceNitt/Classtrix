@@ -10,6 +10,7 @@ const session = require("express-session");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 require('dotenv').config();
 require('./db/db');
 
@@ -113,7 +114,36 @@ app.use(session({
         secure: isProd,
         maxAge: 1000 * 60 * 60 * 4 // 4 hours
     }
+
 }));
+
+// Session-bound synchronizer token protects browser requests that change state.
+const createCsrfToken = () => crypto.randomBytes(32).toString("hex");
+app.use((req, res, next) => {
+    if (!req.session.csrfToken) req.session.csrfToken = createCsrfToken();
+    res.locals.csrfToken = req.session.csrfToken;
+    next();
+});
+
+const csrfProtection = (req, res, next) => {
+    const submittedToken = req.body?._csrf || req.get("x-csrf-token");
+    const expectedToken = req.session?.csrfToken;
+    if (
+        typeof submittedToken !== "string" ||
+        typeof expectedToken !== "string" ||
+        submittedToken.length !== expectedToken.length ||
+        !crypto.timingSafeEqual(Buffer.from(submittedToken), Buffer.from(expectedToken))
+    ) {
+        return res.status(403).send("Invalid or missing CSRF token");
+    }
+    next();
+};
+
+// Validate state-changing requests. Multipart uploads are checked after Multer parses the form.
+app.use((req, res, next) => {
+    if (req.method === "POST" && req.path !== "/upload") return csrfProtection(req, res, next);
+    next();
+});
 
 app.use((req,res,next)=>{
     res.locals.useremail = getUser(req);
@@ -368,7 +398,7 @@ app.get('/upload', adminOnly, function(req,res,next)
 });
 
 
-app.post('/upload', adminOnly, upload, async(req,res,next)=>{
+app.post('/upload', adminOnly, upload, csrfProtection, async(req,res,next)=>{
     var imageFile=req.file.filename;
     var success =req.file.filename+"uploaded successfully";
     var imagedetails=new Timetable({
@@ -403,7 +433,7 @@ app.post("/create-notice", adminOnly, async(req,res)=>{
     
 });
 
-app.get("/delete-notice", adminOnly, async(req,res)=>{
+app.post("/delete-notice", adminOnly, async(req,res)=>{
     var id=req.query;
     var count=Object.keys(id).length;
     for(let i=0;i<count;i++){
@@ -436,7 +466,7 @@ app.get("/delete-notice", adminOnly, async(req,res)=>{
         
     });
     
-    app.get("/delete-clubevent", adminOnly, async(req,res)=>{
+    app.post("/delete-clubevent", adminOnly, async(req,res)=>{
         var id=req.query;
         var count=Object.keys(id).length;
         for(let i=0;i<count;i++){
@@ -480,7 +510,7 @@ app.get("/delete-notice", adminOnly, async(req,res)=>{
         res.redirect("back");
         
     });
-    app.get("/delete-stu", requireAuth, async(req,res)=>{
+    app.post("/delete-stu", requireAuth, async(req,res)=>{
         const rollnums=req.query;
         console.log(rollnums);
         const use=getUser(req);
