@@ -752,8 +752,9 @@ app.post("/reset-password", resetLimiter, async (req, res) => {
             });
         }
 
-        // Hash the new password
-        user.password = await bcrypt.hash(newPassword, 10);
+        // The Register pre-save hook hashes modified passwords.
+        // Assign plaintext here so it is hashed exactly once by the model hook.
+        user.password = newPassword;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         
