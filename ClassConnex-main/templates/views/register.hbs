@@ -65,6 +65,7 @@
             <h2>REGISTRATION FROM</h2>
         </div>
         <form action="/register" method="POST" class="form" id="form">
+<input type="hidden" name="_csrf" value="{{csrfToken}}">
             <div class="form-control">
                 <label for="roll">Roll No</label>
                 <input type="number" id="roll" placeholder="enter your roll no" autocomplete="off" name="roll">
