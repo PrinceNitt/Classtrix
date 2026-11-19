@@ -21,12 +21,14 @@ const userSchema= new mongoose.Schema({
     },
     dept:{
         type:String,
-        reqiured:true
+        required:true,
+        trim:true
     },
     username:{
         type:String,
         required:true,
-        unique:true
+        unique:true,
+        trim:true
     },
     password:{
         type:String,
