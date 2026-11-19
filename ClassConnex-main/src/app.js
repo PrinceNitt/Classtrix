@@ -95,6 +95,11 @@ const sendResetEmail = async (to, code) => {
 
 const port = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === "production";
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (isProd && !sessionSecret) {
+    throw new Error("SESSION_SECRET must be configured in production");
+}
 
 const static_path=path.join(__dirname,"../public");
 const template_path =path.join(__dirname,"../templates/views");
@@ -105,7 +110,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended:false}));
 app.use(session({
     name: "classconnex.sid",
-    secret: process.env.SESSION_SECRET || "dev-secret-change-me",
+    secret: sessionSecret || crypto.randomBytes(32).toString("hex"),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -208,14 +213,28 @@ app.post("/index",async(req,res)=>{
        const isMatch =  await bcrypt.compare(password,userRecord.password);
 
        if(isMatch){
-        req.session.user = {
-            _id: userRecord._id,
-            username: userRecord.username,
-            email: userRecord.email,
-            cr: userRecord.cr,
-            sem: userRecord.sem
-        };
-        res.status(201).render("home",{useremail:req.session.user});
+        return req.session.regenerate((sessionError) => {
+            if (sessionError) {
+                console.error("Unable to regenerate user session", sessionError);
+                return res.status(500).send("Unable to login");
+            }
+            req.session.user = {
+                _id: userRecord._id,
+                username: userRecord.username,
+                email: userRecord.email,
+                cr: userRecord.cr,
+                sem: userRecord.sem
+            };
+            req.session.csrfToken = createCsrfToken();
+            res.locals.csrfToken = req.session.csrfToken;
+            return req.session.save((saveError) => {
+                if (saveError) {
+                    console.error("Unable to save user session", saveError);
+                    return res.status(500).send("Unable to login");
+                }
+                return res.status(200).render("home", { useremail: req.session.user });
+            });
+        });
        }
        else{
         res.send("invalid password login");
@@ -313,6 +332,9 @@ app.post("/admin-login", loginLimiter, async (req,res)=>{
         if(!isMatch){
             return res.status(401).send("Invalid admin credentials.");
         }
+        await new Promise((resolve, reject) => {
+            req.session.regenerate((error) => error ? reject(error) : resolve());
+        });
         req.session.user = {
             _id: candidate._id,
             username: candidate.username,
@@ -320,6 +342,11 @@ app.post("/admin-login", loginLimiter, async (req,res)=>{
             cr: candidate.cr,
             sem: candidate.sem
         };
+        req.session.csrfToken = createCsrfToken();
+        res.locals.csrfToken = req.session.csrfToken;
+        await new Promise((resolve, reject) => {
+            req.session.save((error) => error ? reject(error) : resolve());
+        });
         const [userCount, users, tasks] = await Promise.all([
             Register.countDocuments({}),
             Register.find({}).lean(),
@@ -334,7 +361,16 @@ app.post("/admin-login", loginLimiter, async (req,res)=>{
 })
 
 app.get("/logout",(req,res)=>{
-    req.session.destroy(()=> {
+    req.session.destroy((error) => {
+        if (error) {
+            console.error("Unable to destroy session", error);
+            return res.status(500).send("Unable to logout");
+        }
+        res.clearCookie("classconnex.sid", {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: isProd
+        });
         return res.redirect("/");
     });
 })
