@@ -97,7 +97,7 @@
             <li><a class="navbar-link" href="/adminportal">adminportal</a></li>
           {{/if}}
           {{#if useremail}}
-            <li><a class="navbar-link" href="/logout">logout</a></li>
+            <li><form action="/logout" method="POST" style="display:inline"><input type="hidden" name="_csrf" value="{{csrfToken}}"><button type="submit" class="navbar-link" href="/logout">logout</button></form></li>
           {{/if}}
         </ul>
       </nav>
