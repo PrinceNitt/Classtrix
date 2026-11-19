@@ -61,6 +61,15 @@ const adminOnly = (req, res, next) => {
     next();
 };
 
+// Only a class representative (or the configured admin) may manage a student roster.
+const rosterManagerOnly = (req, res, next) => {
+    const user = getUser(req);
+    if (!user || (!user.cr && user.email !== ADMIN_EMAIL)) {
+        return res.status(403).send("You are not allowed to manage student rosters");
+    }
+    next();
+};
+
 // Email (SMTP) configuration for password reset
 const SMTP_HOST = process.
 env.SMTP_HOST || "smtp.gmail.com";
@@ -514,61 +523,82 @@ app.post("/delete-notice", adminOnly, async(req,res)=>{
     
 
 
-    app.get("/addstu", requireAuth, async(req,res)=>{
-        const use=getUser(req);
-        if(!use){
-            return res.redirect("/");
-        }
-        const semKey = use.sem || "admin";
-        let semdetails=await Sem.findOne({sem:semKey});
-        if(!semdetails){
-            semdetails = await Sem.create({sem:semKey, cr: use.cr ? 1 : 0, stu: []});
-        }
-        res.render("addstu",{semdetails,useremail:use});
-    })
-    app.post("/create-stu", requireAuth, async(req,res)=>{
-           const roll=req.body.roll;
-           const use=getUser(req);
-           if(!use){
-            return res.redirect("/");
-           }
-          const semKey = use.sem || "admin";
-          const rollNum = Number(roll);
-          if(Number.isNaN(rollNum)){
-            return res.status(400).send("Invalid roll number");
-          }
-          await Sem.findOneAndUpdate(
-            {sem:semKey},
-            { $setOnInsert: { cr: use.cr ? 1 : 0 }, $addToSet:{stu:rollNum}},
-            {upsert:true}
-          );
-          await Register.findOneAndUpdate({roll:rollNum},{$set:{sem:semKey}});
-        res.redirect("back");
-        
-    });
-    app.post("/delete-stu", requireAuth, async(req,res)=>{
-        const rollnums=req.query;
-        console.log(rollnums);
-        const use=getUser(req);
-        if(!use){
-            return res.redirect("/");
-        }
+    app.get("/addstu", rosterManagerOnly, async(req,res)=>{
         try {
-            if (rollnums && Object.keys(rollnums).length > 0) {
-              const rollsToDelete = Object.keys(rollnums); // Get the roll numbers to delete
-        
-              // Update the database using the $pull operator to remove the specified rolls from the 'stu' array
-              await Sem.updateMany({sem:use.sem}, { $pull: { stu: { $in: rollsToDelete } } });
-        
-              return res.redirect('back');
-            } else {
-              return res.status(400).send("No roll numbers selected for deletion.");
+            const use = getUser(req);
+            const semKey = use.sem || "admin";
+            let semdetails = await Sem.findOne({sem:semKey});
+            if (!semdetails) {
+                semdetails = await Sem.create({sem:semKey, cr: use.cr ? 1 : 0, stu: []});
             }
-          } catch (error) {
-            console.error(error);
-            return res.status(500).send("An error occurred while deleting the roll numbers.");
-          }
-        });
+            return res.render("addstu", {semdetails, useremail:use});
+        } catch (error) {
+            console.error("Unable to load student roster", error);
+            return res.status(500).send("Unable to load student roster");
+        }
+    });
+
+    app.post("/create-stu", rosterManagerOnly, async(req,res)=>{
+        try {
+            const use = getUser(req);
+            const rollNum = Number(req.body.roll);
+            if (!Number.isSafeInteger(rollNum) || rollNum <= 0) {
+                return res.status(400).send("Invalid roll number");
+            }
+
+            const semKey = use.sem || "admin";
+            const student = await Register.findOne({roll:rollNum});
+            if (!student) {
+                return res.status(404).send("Student not found");
+            }
+            if (student.sem && student.sem !== semKey) {
+                return res.status(409).send("Student is already assigned to another semester");
+            }
+
+            await Sem.findOneAndUpdate(
+                {sem:semKey},
+                {$setOnInsert:{cr:use.cr ? 1 : 0}, $addToSet:{stu:rollNum}},
+                {upsert:true, new:true}
+            );
+            if (student.sem !== semKey) {
+                student.sem = semKey;
+                await student.save();
+            }
+            return res.redirect("/addstu");
+        } catch (error) {
+            console.error("Unable to add student to roster", error);
+            return res.status(500).send("Unable to add student");
+        }
+    });
+
+    app.post("/delete-stu", rosterManagerOnly, async(req,res)=>{
+        try {
+            const use = getUser(req);
+            const semKey = use.sem || "admin";
+            const selectedRolls = Object.keys(req.body || {});
+            const rollsToDelete = selectedRolls
+                .filter((key) => key !== "_csrf" && /^\d+$/.test(key))
+                .map(Number)
+                .filter((roll) => Number.isSafeInteger(roll) && roll > 0);
+
+            if (rollsToDelete.length === 0) {
+                return res.status(400).send("No valid students selected for deletion");
+            }
+
+            await Sem.updateOne(
+                {sem:semKey},
+                {$pull:{stu:{$in:rollsToDelete}}}
+            );
+            await Register.updateMany(
+                {roll:{$in:rollsToDelete}, sem:semKey},
+                {$unset:{sem:""}}
+            );
+            return res.redirect("/addstu");
+        } catch (error) {
+            console.error("Unable to remove students from roster", error);
+            return res.status(500).send("Unable to remove students");
+        }
+    });
 
     app.get("/stuhome", requireAuth, async(req,res)=>{
         res.render("stuhome",{useremail:getUser(req)});
